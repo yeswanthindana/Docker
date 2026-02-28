@@ -1,0 +1,4 @@
+2026-02-28 10:07:12 | INFO     | Incoming Request -> GET /api/containers from client 192.168.31.125
+2026-02-28 10:07:12 | INFO     | Response Out <- GET /api/containers - Status 500 (0.305s)
+2026-02-28 10:08:06 | INFO     | Incoming Request -> GET /api/containers from client 192.168.31.125
+2026-02-28 10:08:06 | INFO     | Response Out <- GET /api/containers - Status 200 (0.281s)
