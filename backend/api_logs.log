@@ -2,3 +2,9 @@
 2026-02-28 10:07:12 | INFO     | Response Out <- GET /api/containers - Status 500 (0.305s)
 2026-02-28 10:08:06 | INFO     | Incoming Request -> GET /api/containers from client 192.168.31.125
 2026-02-28 10:08:06 | INFO     | Response Out <- GET /api/containers - Status 200 (0.281s)
+2026-02-28 10:22:20 | INFO     | Incoming Request -> GET /api/containers from client 127.0.0.1
+2026-02-28 10:22:20 | INFO     | Response Out <- GET /api/containers - Status 200 (0.274s)
+2026-02-28 10:22:28 | INFO     | Incoming Request -> GET /api/images from client 127.0.0.1
+2026-02-28 10:22:28 | INFO     | Response Out <- GET /api/images - Status 200 (0.293s)
+2026-02-28 10:22:30 | INFO     | Incoming Request -> GET /api/containers from client 127.0.0.1
+2026-02-28 10:22:30 | INFO     | Response Out <- GET /api/containers - Status 200 (0.268s)

@@ -35,6 +35,29 @@ def list_remote_running_containers(conn: SSHConnection):
     finally:
         client.close()
 
+@router.post("/containers/{container_id}/inspect", summary="Get full remote container details")
+def inspect_remote_container(container_id: str, conn: SSHConnection):
+    """
+    Returns the full equivalent of 'docker inspect <container>' on the remote host
+    """
+    client = get_ssh_client(conn)
+    try:
+        stdin, stdout, stderr = client.exec_command(f'docker inspect {container_id}')
+        exit_status = stdout.channel.recv_exit_status()
+        if exit_status != 0:
+            err = stderr.read().decode('utf-8')
+            raise HTTPException(status_code=404, detail=f"Container {container_id} not found: {err}")
+        
+        output = stdout.read().decode('utf-8')
+        data = json.loads(output)
+        if not data:
+            raise HTTPException(status_code=404, detail=f"Container {container_id} not found.")
+        return data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        client.close()
+
 @router.post("/containers/{container_id}/start", summary="Start remote container")
 def start_remote_container(container_id: str, conn: SSHConnection):
     client = get_ssh_client(conn)

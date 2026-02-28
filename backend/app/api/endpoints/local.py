@@ -39,6 +39,22 @@ def list_running_containers():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/containers/{container_id}/inspect", summary="Get full container details")
+def inspect_container(container_id: str):
+    """
+    Returns the full equivalent of 'docker inspect <container>'
+    """
+    try:
+        proc = subprocess.run(['docker', 'inspect', container_id], capture_output=True, text=True, check=True)
+        data = json.loads(proc.stdout)
+        if not data:
+            raise HTTPException(status_code=404, detail=f"Container {container_id} not found.")
+        return data[0]
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=404, detail=f"Container {container_id} not found: {e.stderr}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/containers/{container_id}/start", summary="Start container")
 def start_container(container_id: str):
     client = get_docker_client()
