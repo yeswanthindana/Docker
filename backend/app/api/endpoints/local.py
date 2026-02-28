@@ -88,7 +88,7 @@ def stream_container_stdout_logs(container_id: str):
         # Stream the output directly using standard container logs
         def log_generator():
             try:
-                for chunk in container.logs(stream=True, tail=25, stdout=True, stderr=True):
+                for chunk in container.logs(stream=True, follow=True, tail=25, stdout=True, stderr=True):
                     if chunk:
                         yield chunk
             except Exception as e:
@@ -170,6 +170,25 @@ def remove_image(image_id: str, force: bool = False):
         return {"message": f"Image {image_id} removed."}
     except docker.errors.ImageNotFound:
         raise HTTPException(status_code=404, detail=f"Image {image_id} not found.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/images/{image_name:path}/run", summary="Run a container from an image")
+def run_container_from_image(image_name: str, name: str = None):
+    """
+    Spawns and starts a new detached container from the specified image.
+    Optionally accepts a container name via query parameter.
+    """
+    client = get_docker_client()
+    try:
+        # We run it detached (-d), so it starts in background
+        container = client.containers.run(image_name, detach=True, name=name)
+        return {
+            "message": f"Container successfully started from {image_name}.", 
+            "id": container.short_id
+        }
+    except docker.errors.ImageNotFound:
+        raise HTTPException(status_code=404, detail=f"Image {image_name} not found.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

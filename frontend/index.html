@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Management Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --success-hover: #059669;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 0 1.5rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+            border-right: 3px solid var(--primary);
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-color);
+        }
+
+        .header {
+            height: 70px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            background-color: var(--panel-bg);
+        }
+
+        .connection-toggle {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        select,
+        input {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus,
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .ssh-form {
+            display: flex;
+            gap: 0.5rem;
+            display: none;
+            /* hidden by default */
+        }
+
+        .ssh-form.active {
+            display: flex;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+        }
+
+        .btn-success:hover {
+            background-color: var(--success-hover);
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--border-color);
+        }
+
+        /* Tables & Lists */
+        .card {
+            background-color: var(--panel-bg);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Badges */
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-running {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .badge-exited {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .badge-paused {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        /* Logs Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            z-index: 50;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--panel-bg);
+            width: 80%;
+            max-width: 900px;
+            height: 70%;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logs-area {
+            flex: 1;
+            padding: 1rem;
+            background-color: #000;
+            color: #10b981;
+            font-family: monospace;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+        }
+
+        /* Section Visibility */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <div class="logo">
+            🐳 Docker API UI
+        </div>
+        <div class="nav-item active" onclick="switchTab('containers')">Containers</div>
+        <div class="nav-item" onclick="switchTab('images')">Images</div>
+        <div class="nav-item" onclick="switchTab('volumes')">Volumes</div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <div class="connection-toggle">
+                <strong>API Node:</strong>
+                <select id="connMode" onchange="toggleSSHForm()">
+                    <option value="local">Local API Environment</option>
+                    <option value="remote">Remote API (SSH)</option>
+                </select>
+            </div>
+            <div class="ssh-form" id="sshForm">
+                <input type="text" id="sshHost" placeholder="Host IP (e.g. 192.168.1.10)" />
+                <input type="text" id="sshUser" placeholder="Username" />
+                <input type="password" id="sshPass" placeholder="Password" />
+                <input type="number" id="sshPort" placeholder="22" value="22" style="width: 70px;" />
+            </div>
+            <button class="btn" onclick="refreshData()">↻ Refresh Data</button>
+        </div>
+
+        <div class="content-area">
+
+            <!-- Containers Section -->
+            <div id="containers" class="section active">
+                <div class="page-title">
+                    <span>Running Containers</span>
+                </div>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>ID</th>
+                                <th>Image</th>
+                                <th>State</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="containersTable">
+                            <tr>
+                                <td colspan="6" style="text-align:center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Images Section -->
+            <div id="images" class="section">
+                <div class="page-title">
+                    <span>Docker Images</span>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-outline" onclick="downloadAllImages()">Download All (.tar.gz)</button>
+                        <button class="btn btn-outline" onclick="downloadIndividualImages()">Download All as
+                            zip</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Repository / Tag</th>
+                                <th>ID</th>
+                                <th>Size</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="imagesTable">
+                            <tr>
+                                <td colspan="5" style="text-align:center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Volumes Section -->
+            <div id="volumes" class="section">
+                <div class="page-title">
+                    <span>Docker Volumes</span>
+                </div>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Driver</th>
+                                <th>Mountpoint</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="volumesTable">
+                            <tr>
+                                <td colspan="4" style="text-align:center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Logs Modal -->
+    <div class="modal" id="logsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="logsTitle">Container Logs</h3>
+                <button class="btn btn-danger btn-sm" onclick="closeLogs()">Close</button>
+            </div>
+            <div class="logs-area" id="logsArea">Waiting for logs...</div>
+        </div>
+    </div>
+
+    <script>
+        // Use hostname or localhost dynamically to support LAN access
+        const hostName = window.location.hostname || "127.0.0.1";
+        const API_BASE = `http://${hostName}:8000/api`;
+
+        let currentTab = 'containers';
+        let logAbortController = null;
+
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            currentTab = tab;
+            refreshData();
+        }
+
+        function toggleSSHForm() {
+            const mode = document.getElementById('connMode').value;
+            const form = document.getElementById('sshForm');
+            if (mode === 'remote') {
+                form.classList.add('active');
+            } else {
+                form.classList.remove('active');
+            }
+            refreshData();
+        }
+
+        function getSSHCreds() {
+            if (document.getElementById('connMode').value !== 'remote') return null;
+            return {
+                host: document.getElementById('sshHost').value,
+                username: document.getElementById('sshUser').value,
+                password: document.getElementById('sshPass').value,
+                port: parseInt(document.getElementById('sshPort').value) || 22
+            };
+        }
+
+        async function apiRequest(endpoint, method = 'GET', requireBody = false) {
+            const mode = document.getElementById('connMode').value;
+            const creds = getSSHCreds();
+
+            // Adjust the base path for endpoints based on mode
+            const pre = mode === 'remote' ? '/remote' : '';
+            let url = `${API_BASE}${pre}${endpoint}`;
+
+            let options = { method: method, headers: {} };
+
+            // If remote, and the endpoint requires body credentials
+            if (mode === 'remote') {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(creds);
+                // IF we need to list remote resources we send POST because it expects the SSH JSON payload
+                if (method === 'GET') {
+                    options.method = 'POST'; // We converted these to POST in remote.py so fetch works!
+                }
+            }
+
+            try {
+                const res = await fetch(url, options);
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'API Request Failed');
+                }
+                return await res.json();
+            } catch (e) {
+                alert(`Error: ${e.message}`);
+                console.error(e);
+                return null;
+            }
+        }
+
+        async function triggerAction(endpoint, method, forceRefresh = true) {
+            await apiRequest(endpoint, method, true);
+            if (forceRefresh) refreshData();
+        }
+
+        function getBadgeClass(state) {
+            if (!state) return '';
+            state = state.toLowerCase();
+            if (state.includes('running') || state.includes('up')) return 'badge-running';
+            if (state.includes('exited') || state.includes('stop')) return 'badge-exited';
+            if (state.includes('paused')) return 'badge-paused';
+            return '';
+        }
+
+        async function refreshData() {
+            if (currentTab === 'containers') {
+                document.getElementById('containersTable').innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>';
+                const data = await apiRequest('/containers', 'GET');
+                if (!data) {
+                    document.getElementById('containersTable').innerHTML = '<tr><td colspan="6" style="text-align:center;">Failed to load</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                data.containers.forEach(c => {
+                    const statusText = c.state || c.status || 'unknown';
+                    html += `<tr>
+                        <td><strong>${c.name}</strong></td>
+                        <td style="font-family: monospace; color: var(--text-muted);">${c.id.substring(0, 12)}</td>
+                        <td>${c.image}</td>
+                        <td><span class="badge ${getBadgeClass(statusText)}">${statusText}</span></td>
+                        <td>${c.created || '-'}</td>
+                        <td class="actions-cell">
+                            <button class="btn btn-success btn-sm" onclick="triggerAction('/containers/${c.id}/start', 'POST')">Start</button>
+                            <button class="btn btn-warning btn-sm" style="background:#f59e0b;color:white;border:none" onclick="triggerAction('/containers/${c.id}/stop', 'POST')">Stop</button>
+                            <button class="btn btn-sm" onclick="triggerAction('/containers/${c.id}/restart', 'POST')">Restart</button>
+                            <button class="btn btn-outline btn-sm" onclick="openLogs('${c.id}')">Stdout</button>
+                            <button class="btn btn-danger btn-sm" onclick="triggerAction('/containers/${c.id}?force=true', 'DELETE')">Rm</button>
+                        </td>
+                    </tr>`;
+                });
+                if (data.containers.length === 0) html = '<tr><td colspan="6" style="text-align:center;">No containers found</td></tr>';
+                document.getElementById('containersTable').innerHTML = html;
+            }
+            else if (currentTab === 'images') {
+                document.getElementById('imagesTable').innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
+                const data = await apiRequest('/images', 'GET');
+                if (!data) return;
+
+                let html = '';
+                data.images.forEach(i => {
+                    let name = i.image_name ? i.image_name[0] : '<none>';
+                    html += `<tr>
+                        <td><strong>${name}</strong></td>
+                        <td style="font-family: monospace;">${i.id.split(':')[1]?.substring(0, 12) || i.id.substring(0, 12)}</td>
+                        <td>${i.size_mb ? i.size_mb + ' MB' : i.size || 'N/A'}</td>
+                        <td>${i.created || '-'}</td>
+                        <td class="actions-cell">
+                            <button class="btn btn-success btn-sm" onclick="runImage('${name}')">▶ Run</button>
+                            <button class="btn btn-outline btn-sm" onclick="downloadSpecificImage('${name}')">⬇ .tar.gz</button>
+                            <button class="btn btn-danger btn-sm" onclick="triggerAction('/images/${i.id}?force=true', 'DELETE')">Rm</button>
+                        </td>
+                    </tr>`;
+                });
+                if (data.images.length === 0) html = '<tr><td colspan="5" style="text-align:center;">No images found</td></tr>';
+                document.getElementById('imagesTable').innerHTML = html;
+            }
+            else if (currentTab === 'volumes') {
+                document.getElementById('volumesTable').innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading...</td></tr>';
+                const data = await apiRequest('/volumes', 'GET');
+                if (!data) return;
+
+                let html = '';
+                data.volumes.forEach(v => {
+                    html += `<tr>
+                        <td><strong>${v.name}</strong></td>
+                        <td><span class="badge" style="background:#334155">${v.driver || 'local'}</span></td>
+                        <td style="font-size: 0.85rem; color: var(--text-muted);">${v.mountpoint || '-'}</td>
+                        <td class="actions-cell">
+                            <button class="btn btn-danger btn-sm" onclick="triggerAction('/volumes/${v.name}?force=true', 'DELETE')">Rm</button>
+                        </td>
+                    </tr>`;
+                });
+                if (data.volumes.length === 0) html = '<tr><td colspan="4" style="text-align:center;">No volumes found</td></tr>';
+                document.getElementById('volumesTable').innerHTML = html;
+            }
+        }
+
+        // --- Log Streaming System ---
+        async function openLogs(containerId) {
+            document.getElementById('logsModal').classList.add('active');
+            document.getElementById('logsTitle').innerText = 'Logs: ' + containerId.substring(0, 12);
+            const logsArea = document.getElementById('logsArea');
+            logsArea.innerText = 'Connecting...';
+
+            if (logAbortController) logAbortController.abort();
+            logAbortController = new AbortController();
+
+            const mode = document.getElementById('connMode').value;
+            const creds = getSSHCreds();
+            const pre = mode === 'remote' ? '/remote' : '';
+            const url = `${API_BASE}${pre}/containers/${containerId}/logs/stdout`;
+
+            let options = {
+                method: mode === 'remote' ? 'POST' : 'GET',
+                signal: logAbortController.signal
+            };
+
+            if (mode === 'remote') {
+                options.headers = { 'Content-Type': 'application/json' };
+                options.body = JSON.stringify(creds);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) throw new Error('Failed to stream logs');
+
+                logsArea.innerText = '';
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    logsArea.innerText += decoder.decode(value, { stream: true });
+                    logsArea.scrollTop = logsArea.scrollHeight;
+                }
+                logsArea.innerText += '\n\n[STREAM DISCONNECTED]';
+            } catch (e) {
+                if (e.name === 'AbortError') logsArea.innerText += '\n[CONNECTION CLOSED]';
+                else logsArea.innerText += `\nError: ${e.message}`;
+            }
+        }
+
+        function closeLogs() {
+            if (logAbortController) logAbortController.abort();
+            document.getElementById('logsModal').classList.remove('active');
+        }
+
+        // --- File Download Handlers ---
+        // Browsers handle downloads better by navigating or via Blob, 
+        // For remote endpoints we need a POST fetch to send SSH creds, so we must download via Blob.
+        async function triggerBlobDownload(endpoint, filename) {
+            const mode = document.getElementById('connMode').value;
+            const pre = mode === 'remote' ? '/remote' : '';
+            const url = `${API_BASE}${pre}${endpoint}`;
+            const options = {
+                method: mode === 'remote' ? 'POST' : 'GET',
+                headers: {}
+            };
+            if (mode === 'remote') {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(getSSHCreds());
+            }
+
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    const er = await response.json();
+                    throw new Error(er.detail);
+                }
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(downloadUrl);
+            } catch (entry) {
+                alert("Download Failed: " + entry);
+            }
+        }
+
+        function downloadAllImages() {
+            const mode = document.getElementById('connMode').value;
+            triggerBlobDownload('/images/download-all', mode === 'remote' ? 'remote_all_images.tar.gz' : 'all_docker_images.tar.gz');
+        }
+
+        function downloadIndividualImages() {
+            const mode = document.getElementById('connMode').value;
+            triggerBlobDownload('/images/download-individual', mode === 'remote' ? 'remote_individual_images.zip' : 'individual_docker_images.zip');
+        }
+
+        function downloadSpecificImage(name) {
+            triggerBlobDownload(`/images/download/${encodeURIComponent(name)}`, `${name.replace(/[:\/]/g, '_')}.tar.gz`);
+        }
+
+        async function runImage(imageName) {
+            if (imageName === '<none>') {
+                alert("Cannot run an untagged image without providing its ID.");
+                return;
+            }
+
+            let userDefinedName = prompt(`Enter a custom container name to spawn from ${imageName}\n(or leave completely blank for a random name):`);
+            if (userDefinedName === null) return; // Cancelled
+
+            let queryUrl = `/images/${encodeURIComponent(imageName)}/run`;
+            if (userDefinedName.trim() !== '') {
+                queryUrl += `?name=${encodeURIComponent(userDefinedName.trim())}`;
+            }
+
+            await triggerAction(queryUrl, 'POST', false);
+            // Aggressively switch over to the containers tab so they can immediately see it!
+            switchTab('containers');
+        }
+
+        // Initialize display
+        refreshData();
+    </script>
+</body>
+
+</html>

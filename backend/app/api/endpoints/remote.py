@@ -12,7 +12,7 @@ from app.utils.helpers import cleanup_temp_files
 
 router = APIRouter()
 
-@router.get("/containers", summary="Get remote running containers")
+@router.post("/containers", summary="Get remote running containers")
 def list_remote_running_containers(conn: SSHConnection):
     client = get_ssh_client(conn)
     result = []
@@ -77,7 +77,7 @@ def restart_remote_container(container_id: str, conn: SSHConnection):
     finally:
         client.close()
 
-@router.get("/containers/{container_id}/logs/stdout", summary="Stream live container stdout/stderr logs")
+@router.post("/containers/{container_id}/logs/stdout", summary="Stream live container stdout/stderr logs")
 def stream_remote_container_stdout_logs(container_id: str, conn: SSHConnection):
     """
     Streams the standard container logs (stdout/stderr).
@@ -85,8 +85,8 @@ def stream_remote_container_stdout_logs(container_id: str, conn: SSHConnection):
     """
     client = get_ssh_client(conn)
     try:
-        # Use docker logs instead of exec tail
-        stdin, stdout, stderr = client.exec_command(f'docker logs -f --tail 25 {container_id}')
+        # Use docker logs instead of exec tail, with unbuffered pty
+        stdin, stdout, stderr = client.exec_command(f'docker logs -f --tail 25 {container_id}', get_pty=True)
         
         def log_generator():
             try:
@@ -107,15 +107,15 @@ def stream_remote_container_stdout_logs(container_id: str, conn: SSHConnection):
         client.close()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/containers/{container_id}/logs/file", summary="Stream live file logs from remote container")
+@router.post("/containers/{container_id}/logs/file", summary="Stream live file logs from remote container")
 def stream_remote_container_file_logs(container_id: str, log_path: str, conn: SSHConnection):
     """
     Streams live logs from a specific file path inside the remote container.
     """
     client = get_ssh_client(conn)
     try:
-        # Use python's context over the ssh stream to read output
-        stdin, stdout, stderr = client.exec_command(f'docker exec -it {container_id} tail -n 25 -f {log_path}')
+        # Use python's context over the ssh stream to read output, with unbuffered pty
+        stdin, stdout, stderr = client.exec_command(f'docker exec {container_id} tail -n 25 -f {log_path}', get_pty=True)
         
         def log_generator():
             try:
@@ -153,7 +153,7 @@ def remove_remote_container(container_id: str, conn: SSHConnection, force: bool 
     finally:
         client.close()
 
-@router.get("/images", summary="Get remote Docker images")
+@router.post("/images", summary="Get remote Docker images")
 def list_remote_docker_images(conn: SSHConnection):
     client = get_ssh_client(conn)
     result = []
@@ -189,7 +189,37 @@ def remove_remote_image(image_id: str, conn: SSHConnection, force: bool = False)
     finally:
         client.close()
 
-@router.get("/volumes", summary="Get remote Docker volumes")
+@router.post("/images/{image_name:path}/run", summary="Run a remote container from an image")
+def run_remote_container_from_image(image_name: str, conn: SSHConnection, name: str = None):
+    """
+    Spawns and starts a new detached container from the specified remote image.
+    Optionally accepts a container name via query parameter.
+    """
+    client = get_ssh_client(conn)
+    name_flag = f"--name {name}" if name else ""
+    try:
+        # We run it detached (-d) in background
+        stdin, stdout, stderr = client.exec_command(f'docker run -d {name_flag} {image_name}')
+        exit_status = stdout.channel.recv_exit_status()
+        if exit_status != 0:
+            # If start fails, bubble up the error text
+            raise Exception(stderr.read().decode('utf-8'))
+            
+        container_id = stdout.read().decode('utf-8').strip()
+        # Return just the first 12 chars standard short ID
+        if len(container_id) > 12:
+            container_id = container_id[:12]
+            
+        return {
+            "message": f"Container successfully started from {image_name} on remote.", 
+            "id": container_id
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        client.close()
+
+@router.post("/volumes", summary="Get remote Docker volumes")
 def list_remote_docker_volumes(conn: SSHConnection):
     client = get_ssh_client(conn)
     result = []
@@ -225,7 +255,7 @@ def remove_remote_volume(volume_name: str, conn: SSHConnection, force: bool = Fa
     finally:
         client.close()
 
-@router.get("/images/download/{image_name:path}", summary="Download specific remote image as .tar.gz")
+@router.post("/images/download/{image_name:path}", summary="Download specific remote image as .tar.gz")
 def download_remote_specific_image(image_name: str, conn: SSHConnection, background_tasks: BackgroundTasks):
     client = get_ssh_client(conn)
     
@@ -256,7 +286,7 @@ def download_remote_specific_image(image_name: str, conn: SSHConnection, backgro
     finally:
         client.close()
 
-@router.get("/images/download-all", summary="Download all remote images as a single .tar.gz")
+@router.post("/images/download-all", summary="Download all remote images as a single .tar.gz")
 def download_remote_all_images(conn: SSHConnection, background_tasks: BackgroundTasks):
     client = get_ssh_client(conn)
     
@@ -295,7 +325,7 @@ def download_remote_all_images(conn: SSHConnection, background_tasks: Background
     finally:
         client.close()
 
-@router.get("/images/download-individual", summary="Download all remote images as individual .tar.gz inside a .zip")
+@router.post("/images/download-individual", summary="Download all remote images as individual .tar.gz inside a .zip")
 def download_remote_all_images_individual(conn: SSHConnection, background_tasks: BackgroundTasks):
     client = get_ssh_client(conn)
     
