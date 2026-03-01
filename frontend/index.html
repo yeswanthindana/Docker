@@ -338,8 +338,8 @@
                 </select>
             </div>
             <div class="ssh-form" id="sshForm">
-                <input type="text" id="sshHost" placeholder="Host IP (e.g. 192.168.1.10)" />
-                <input type="text" id="sshUser" placeholder="Username" />
+                <input type="text" id="sshHost" placeholder="IP Address (e.g. 192.168.1.10)" />
+                <input type="text" id="sshUser" placeholder="Hostname (Username)" />
                 <input type="password" id="sshPass" placeholder="Password" />
                 <input type="number" id="sshPort" placeholder="22" value="22" style="width: 70px;" />
             </div>
@@ -474,8 +474,8 @@
         function getSSHCreds() {
             if (document.getElementById('connMode').value !== 'remote') return null;
             return {
-                host: document.getElementById('sshHost').value,
-                username: document.getElementById('sshUser').value,
+                ip_address: document.getElementById('sshHost').value,
+                hostname: document.getElementById('sshUser').value,
                 password: document.getElementById('sshPass').value,
                 port: parseInt(document.getElementById('sshPort').value) || 22
             };

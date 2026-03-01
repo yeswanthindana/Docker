@@ -26,7 +26,12 @@ def list_remote_running_containers(conn: SSHConnection):
                 "id": data.get("ID"),
                 "name": data.get("Names"),
                 "status": data.get("Status"),
-                "image": data.get("Image")
+                "state": data.get("State", "N/A"),
+                "health": "N/A", 
+                "image": data.get("Image"),
+                "created": data.get("CreatedAt"),
+                "running_for": data.get("RunningFor"),
+                "ports": data.get("Ports")
             })
         return {"containers": result}
     except Exception as e:
@@ -188,7 +193,8 @@ def list_remote_docker_images(conn: SSHConnection):
             result.append({
                 "id": data.get("ID"),
                 "image_name": [f"{data.get('Repository')}:{data.get('Tag')}"],
-                "size_mb": data.get("Size")
+                "size_mb": data.get("Size"),
+                "created": data.get("CreatedAt")
             })
         return {"images": result}
     except Exception as e:
@@ -254,7 +260,8 @@ def list_remote_docker_volumes(conn: SSHConnection):
             result.append({
                 "name": data.get("Name"),
                 "driver": data.get("Driver"),
-                "mountpoint": data.get("Mountpoint")
+                "mountpoint": data.get("Mountpoint", ""),
+                "labels": data.get("Labels", "")
             })
         return {"volumes": result}
     except Exception as e:

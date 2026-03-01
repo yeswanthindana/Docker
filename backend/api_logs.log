@@ -8,3 +8,19 @@
 2026-02-28 10:22:28 | INFO     | Response Out <- GET /api/images - Status 200 (0.293s)
 2026-02-28 10:22:30 | INFO     | Incoming Request -> GET /api/containers from client 127.0.0.1
 2026-02-28 10:22:30 | INFO     | Response Out <- GET /api/containers - Status 200 (0.268s)
+2026-02-28 12:48:04 | INFO     | Incoming Request -> GET /docs from client 127.0.0.1
+2026-02-28 12:48:04 | INFO     | Response Out <- GET /docs - Status 200 (0.001s)
+2026-02-28 12:48:04 | INFO     | Incoming Request -> GET /openapi.json from client 127.0.0.1
+2026-02-28 12:48:04 | INFO     | Response Out <- GET /openapi.json - Status 200 (0.011s)
+2026-02-28 12:58:15 | INFO     | Incoming Request -> GET /docs from client 127.0.0.1
+2026-02-28 12:58:15 | INFO     | Response Out <- GET /docs - Status 200 (0.001s)
+2026-02-28 12:58:15 | INFO     | Incoming Request -> GET /openapi.json from client 127.0.0.1
+2026-02-28 12:58:15 | INFO     | Response Out <- GET /openapi.json - Status 200 (0.009s)
+2026-02-28 12:58:19 | INFO     | Incoming Request -> GET /docs from client 127.0.0.1
+2026-02-28 12:58:19 | INFO     | Response Out <- GET /docs - Status 200 (0.000s)
+2026-02-28 12:58:19 | INFO     | Incoming Request -> GET /openapi.json from client 127.0.0.1
+2026-02-28 12:58:19 | INFO     | Response Out <- GET /openapi.json - Status 200 (0.001s)
+2026-02-28 12:58:42 | INFO     | Incoming Request -> POST /api/remote/containers from client 127.0.0.1
+2026-02-28 12:58:43 | INFO     | Response Out <- POST /api/remote/containers - Status 200 (0.596s)
+2026-02-28 12:59:30 | INFO     | Incoming Request -> POST /api/remote/containers from client 127.0.0.1
+2026-02-28 12:59:31 | INFO     | Response Out <- POST /api/remote/containers - Status 200 (0.640s)
